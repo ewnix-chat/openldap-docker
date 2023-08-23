@@ -1,6 +1,4 @@
-# Use osixia/light-baseimage
-# sources: https://github.com/osixia/docker-light-baseimage
-FROM osixia/light-baseimage:1.3.2
+FROM phluxeternus/docker-light-baseimage
 
 ARG OPENLDAP_PACKAGE_VERSION=2.5.13+dfsg-5
 
