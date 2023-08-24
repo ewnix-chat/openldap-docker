@@ -1,4 +1,4 @@
-# ----- Build Stage -----
+#----- Build Stage -----
 FROM debian:bookworm-slim as builder
 
 # Set environment variables to non-interactive (this prevents some prompts)
@@ -15,6 +15,15 @@ RUN apt-get update \
         libgnutls28-dev \
         libltdl-dev \
         groff-base \
+	make \
+	libtool \
+	openssl \
+	libevent-dev \
+	libargon2-dev \
+	pkg-config \
+	wiredtiger \
+	libsystemd-dev \
+	libperl-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,7 +36,23 @@ RUN curl -LO ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/openldap-${OPE
     && tar xzf openldap-${OPENLDAP_VERSION}.tgz \
     && cd openldap-${OPENLDAP_VERSION} \
     && ./configure --prefix=/usr/local/openldap \
-                   --sysconfdir=/etc/ldap \
+                   --sysconfdir=/etc/ldap \ 
+                   --disable-static \
+                   --enable-debug \
+                   --with-tls=openssl \
+                   --with-cyrus-sasl \
+                   --enable-dynamic \
+                   --enable-crypt \
+                   --enable-spasswd \
+                   --enable-modules \
+                   --enable-rlookups \
+                   --enable-backends=mod \
+                   --disable-sql \
+                   --enable-ppolicy=mod \
+                   --enable-syslog \
+                   --enable-overlays=mod \
+                   --enable-wt=no \
+                   --enable-mdb \
                    --localstatedir=/var/lib/ldap \
                    --enable-slapd \
     && make && make install \
@@ -37,14 +62,14 @@ RUN curl -LO ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/openldap-${OPE
 FROM debian:bookworm-slim
 
 # Copy the OpenLDAP binaries and libraries from the builder stage
-COPY --from=builder /usr/local/openldap /usr/local/openldap
+COPY --from=builder /usr/local/openldap /usr/local
 
 # Install any runtime dependencies
 RUN apt-get update \
     && apt-get install -y \
         libdb5.3 \
         libssl3 \
-        libsasl2-2 \
+        libsasl2-dev \
         libgnutls30 \
         libltdl7 \
         gosu \
@@ -64,7 +89,6 @@ COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 COPY base-cn\=config.ldif /tmp/base-cn\=config.ldif
 
-# Switch to openldap user after setup is complete
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["-F", "/etc/ldap/slapd.d", "-h", "ldap:/// ldaps:///", "-d", "256"]
 

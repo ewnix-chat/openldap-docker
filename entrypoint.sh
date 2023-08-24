@@ -10,14 +10,14 @@ touch /var/run/slapd/slapd.pid
 chown -R openldap:openldap /etc/ldap/slapd.d
 chown -R openldap:openldap /var/lib/ldap
 chown -R openldap:openldap /var/run/slapd
-chown -R openldap:openldap /var/run/slapd.pid
+chown -R openldap:openldap /var/run/slapd/slapd.pid
 
 # Check if configuration exists
 if [ ! -f /etc/ldap/slapd.d/cn=config.ldif ]; then
     cp /tmp/base-cn=config.ldif /etc/ldap/slapd.d/base-cn=config.ldif
-    /usr/local/openldap/sbin/slapadd -n 0 -F /etc/ldap/slapd.d -l /etc/ldap/slapd.d/base-cn\=config.ldif
+    /usr/local/sbin/slapadd -n 0 -F /etc/ldap/slapd.d -l /etc/ldap/slapd.d/base-cn\=config.ldif
 fi
 
 # Start slapd with the provided arguments or defaults
-exec gosu openldap /usr/local/openldap/libexec/slapd "$@"
+exec gosu openldap /usr/local/libexec/slapd "$@"
 
